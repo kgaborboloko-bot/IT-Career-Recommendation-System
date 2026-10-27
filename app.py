@@ -869,7 +869,7 @@ with st.sidebar:
     is_admin = True
     if access_role == "📊 Admin / Researcher (Full Access)":
         admin_pass = st.text_input("Enter Admin Passcode:", type="password")
-        if admin_pass != "eduvos2026":  # You can change this password
+        if admin_pass != st.secrets["ADMIN_PASSCODE"]:
             st.warning("Enter correct passcode to unlock Admin Dashboard.")
             is_admin = False
         else:
