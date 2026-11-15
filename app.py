@@ -6,6 +6,7 @@
 
 from pathlib import Path
 import re
+from collections import Counter
 
 import joblib
 import matplotlib.pyplot as plt
@@ -87,11 +88,9 @@ BUNDLE_FILE = (
     BASE_DIR / "it_career_recommender_bundle.joblib"
 )
 
-
 @st.cache_resource
 def load_bundle():
     return joblib.load(BUNDLE_FILE)
-
 
 if not BUNDLE_FILE.exists():
     st.error(
@@ -100,7 +99,6 @@ if not BUNDLE_FILE.exists():
         "in the same folder as app.py."
     )
     st.stop()
-
 
 try:
     bundle = load_bundle()
@@ -120,6 +118,17 @@ categories = [
     if track in demand_profiles
 ]
 
+@st.cache_data
+def build_skill_options(min_postings=5):
+    counts = Counter()
+    for value in jobs["skills"].fillna("").astype(str):
+        counts.update({s.strip() for s in value.split(",") if s.strip()})
+    vocab = set(model.named_steps["vectorizer"].vocabulary_)
+    options = {s: c for s, c in counts.items()
+               if c >= min_postings and s in vocab and s in ALL_SKILLS}
+    return dict(sorted(options.items(), key=lambda kv: (-kv[1], kv[0])))
+
+SKILL_COUNTS = build_skill_options()
 
 # ============================================================
 # 3. LEARNING RESOURCES
@@ -988,9 +997,11 @@ with explorer:
 
     selected_skills = st.multiselect(
         "Select skills you know",
-        ALL_SKILLS,
+        options=list(SKILL_COUNTS),
+        format_func=lambda s: f"{s}  ({SKILL_COUNTS[s]} adverts)",
         help=(
-            "You can select more than one skill."
+            "Only skills that appeared in the job adverts we collected "
+            "are listed. If yours is missing, type it in the box below."
         )
     )
 
@@ -1077,58 +1088,52 @@ with explorer:
                     []
                 )
 
-                with st.expander(
-                    "Where did the system recognise these skills?"
-                ):
-
-                    st.markdown(
-                        "**Skills found in the trained model's vocabulary**"
+                if model_known:
+                    st.success(
+                        "**Found in the job adverts we collected:** "
+                        + ", ".join(model_known)
                     )
 
-                    st.write(
-                        ", ".join(model_known)
-                        if model_known
-                        else "None"
-                    )
-
-                    st.markdown(
-                        "**Skills recognised through the taxonomy**"
-                    )
-
-                    st.write(
-                        ", ".join(taxonomy_only)
-                        if taxonomy_only
-                        else "None"
-                    )
-
+                if taxonomy_only:
                     st.info(
-                        "Some technical skills were not identified in "
-                        "the collected South African job advertisements "
-                        "used to train the model. "
-                        "This does not mean those skills are irrelevant. "
-                        "They may still be valuable in IT careers."
+                        "**Not found in our job adverts dataset:** "
+                        + ", ".join(taxonomy_only)
+                        + "\n\n"
+                        "These are real IT skills, but none of the job adverts "
+                        "we collected mentioned them. This does not mean they "
+                        "are unimportant. It only means our data cannot show "
+                        "how in-demand they are, so they were matched using "
+                        "our research list instead."
                     )
 
-                unknown = result[
-                    "recognition"
-                ].get(
-                    "unrecognised",
-                    []
-                )
+                ambiguous = result["recognition"].get("ambiguous", [])
 
-                if unknown:
-
+                if ambiguous:
                     st.warning(
-                        "Some skills could not be recognised."
+                        "**These entries could mean more than one skill:**"
                     )
-
-                    for item in unknown:
-
+                    for item in ambiguous:
                         st.write(
-                            "• {}".format(
-                                item.get("input", "")
+                            "• {} → could be: {}".format(
+                                item.get("input", ""),
+                                ", ".join(item.get("suggestions", []))
                             )
                         )
+
+                unknown = result["recognition"].get("unrecognised", [])
+
+                if unknown:
+                    st.warning(
+                        "**We don't recognise these entries.** "
+                        "Please check the spelling or try another name:"
+                    )
+                    for item in unknown:
+                        line = "• {}".format(item.get("input", ""))
+                        if item.get("suggestions"):
+                            line += " — did you mean: {}?".format(
+                                ", ".join(item["suggestions"])
+                            )
+                        st.write(line)
 
                 # ----------------------------------------
                 # CAREER RECOMMENDATIONS
@@ -2071,10 +2076,13 @@ if dashboard is not None:
     
     st.info(
         "**Evaluation Interpretation:**\n"
-        "The Elbow curve exhibits an inflection point around K = 5 where the rate of within-cluster "
-        "variance decrease begins to stabilize. Combined with positive silhouette scores across all K, "
-        "K = 5 provides a natural mathematical grouping that corresponds directly to primary "
-        "technology tracks in the South African market."
+        "The elbow curve does not show a sharp bend, and the silhouette "
+        "scores are low (below 0.1 at K = 5), which means the groups overlap. "
+        "K = 5 was chosen as a practical balance: it gives clusters that are "
+        "large enough to interpret and that line up best with the main "
+        "technology areas in the job market. Treat the clusters as an "
+        "exploratory view of skill patterns, not as sharply separated "
+        "categories."
     )
     
     # -----------------------------------------------------------------------------
