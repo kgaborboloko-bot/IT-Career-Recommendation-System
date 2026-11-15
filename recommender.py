@@ -486,13 +486,19 @@ def calculate_skill_gap(
         student_skills
     )
 
-    # Count as matched if the skill appears in the demand profile counts
-    # (i.e. it was mentioned in job ads for this career)
+    # Only count as matched if:
+    # 1. The skill appears in this career's demand profile, AND
+    # 2. The taxonomy actually maps the skill to this specialisation
     counts = profile.get("counts", {})
-    matched = sorted(
-        skill for skill in student_set
-        if skill in counts and counts.get(skill, 0) > 0
-    )
+    matched = []
+    
+    for skill in student_set:
+        if skill in counts and counts.get(skill, 0) > 0:
+            mappings = SKILL_SPECIALISATIONS.get(skill, {})
+            if target_specialisation in mappings:
+                matched.append(skill)
+    
+    matched = sorted(matched)
 
     missing = sorted(
         benchmark - student_set
