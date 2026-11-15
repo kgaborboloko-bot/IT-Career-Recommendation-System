@@ -486,8 +486,12 @@ def calculate_skill_gap(
         student_skills
     )
 
+    # Count as matched if the skill appears in the demand profile counts
+    # (i.e. it was mentioned in job ads for this career)
+    counts = profile.get("counts", {})
     matched = sorted(
-        student_set & benchmark
+        skill for skill in student_set
+        if skill in counts and counts.get(skill, 0) > 0
     )
 
     missing = sorted(
