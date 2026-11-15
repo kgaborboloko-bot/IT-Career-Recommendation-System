@@ -1666,10 +1666,13 @@ if dashboard is not None:
                     valid_dates.max().strftime("%d %B %Y")
                 )
             )
-            periods = valid_dates.dt.to_period("M")
-            month_counts = periods.value_counts().sort_index()
-            ordered_labels = [p.strftime("%B %Y") for p in month_counts.index]
-            month_counts.index = ordered_labels
+            month_counts = (
+                valid_dates.dt.to_period("M")
+                .value_counts()
+                .sort_index()
+            )
+            month_counts.index = [period.strftime("%B %Y") for period in month_counts.index]
+            month_counts = month_counts.reindex(month_counts.index)  # keep chronological order
             dashboard_bar(month_counts, "Advertisements by posting month", 24)
             st.caption("These are the dates jobs were advertised. They do not establish the dates on which the websites were scraped.")
         else:
