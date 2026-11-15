@@ -6,7 +6,6 @@
 
 from pathlib import Path
 import re
-from collections import Counter
 
 import joblib
 import matplotlib.pyplot as plt
@@ -118,17 +117,6 @@ categories = [
     if track in demand_profiles
 ]
 
-@st.cache_data
-def build_skill_options(min_postings=5):
-    counts = Counter()
-    for value in jobs["skills"].fillna("").astype(str):
-        counts.update({s.strip() for s in value.split(",") if s.strip()})
-    vocab = set(model.named_steps["vectorizer"].vocabulary_)
-    options = {s: c for s, c in counts.items()
-               if c >= min_postings and s in vocab and s in ALL_SKILLS}
-    return dict(sorted(options.items(), key=lambda kv: (-kv[1], kv[0])))
-
-SKILL_COUNTS = build_skill_options()
 
 # ============================================================
 # 3. LEARNING RESOURCES
