@@ -1671,9 +1671,24 @@ if dashboard is not None:
                 .value_counts()
                 .sort_index()
             )
-            month_counts.index = [period.strftime("%B %Y") for period in month_counts.index]
-            month_counts = month_counts.reindex(month_counts.index)  # keep chronological order
-            dashboard_bar(month_counts, "Advertisements by posting month", 24)
+            # Force chronological month order
+            periods = valid_dates.dt.to_period("M")
+            month_counts = periods.value_counts().sort_index()
+            
+            # Create ordered labels
+            ordered_labels = [p.strftime("%B %Y") for p in month_counts.index]
+            month_counts.index = ordered_labels
+            
+            # Use Plotly so the order is preserved
+            import plotly.express as px
+            fig = px.bar(
+                x=month_counts.index,
+                y=month_counts.values,
+                labels={"x": "Month", "y": "Advertisements"},
+                title="Advertisements by posting month"
+            )
+            fig.update_xaxes(type="category")
+            st.plotly_chart(fig, use_container_width=True)
             st.caption("These are the dates jobs were advertised. They do not establish the dates on which the websites were scraped.")
         else:
             st.info("Posting dates are unavailable in the model dataset.")
