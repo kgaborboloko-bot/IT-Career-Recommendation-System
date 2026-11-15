@@ -985,13 +985,9 @@ with explorer:
 
     selected_skills = st.multiselect(
         "Select skills you know",
-        options=list(SKILL_COUNTS),
-        format_func=lambda s: f"{s}  ({SKILL_COUNTS[s]} adverts)",
-        help=(
-            "Only skills that appeared in the job adverts we collected "
-            "are listed. If yours is missing, type it in the box below."
-        )
-    )
+        ALL_SKILLS,   # <-- this comes from skills_taxonomy.py
+        help="You can select more than one skill."
+)
 
     extra_skills = st.text_input(
         "Other skills you would like to add",
