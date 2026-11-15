@@ -1,7 +1,7 @@
 
 # ============================================================
 # IT CAREER RECOMMENDATION SYSTEM
-# UPDATED STREAMLIT APPLICATION
+# UPDATED STREAMLIT APPLICATIOn
 # ============================================================
 
 from pathlib import Path
