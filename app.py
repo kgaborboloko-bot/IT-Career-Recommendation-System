@@ -2291,41 +2291,6 @@ if dashboard is not None:
             )
             st.dataframe(per_class_table, use_container_width=True, hide_index=True)
     
-    # -----------------------------------------------------------------------------
-    # D. CONFUSION MATRIX VISUALISATION
-    # -----------------------------------------------------------------------------
-    cm_data = bundle.get("confusion_matrix_data")
-    
-    if isinstance(cm_data, dict) and "matrix" in cm_data:
-        with st.expander("Confusion Matrix Display"):
-            st.write(
-                "The confusion matrix illustrates correct predictions along the diagonal, "
-                "highlighting where skill overlap occurs between related career paths:"
-            )
-            
-            matrix = cm_data["matrix"]
-            labels = cm_data["labels"]
-            
-            fig_cm, ax_cm = plt.subplots(figsize=(8, 6))
-            cax = ax_cm.matshow(matrix, cmap="Blues", alpha=0.85)
-            fig_cm.colorbar(cax)
-            
-            ax_cm.set_xticks(range(len(labels)))
-            ax_cm.set_yticks(range(len(labels)))
-            ax_cm.set_xticklabels(labels, rotation=45, ha="left", fontsize=9)
-            ax_cm.set_yticklabels(labels, fontsize=9)
-            
-            # Display counts inside cells
-            for i in range(len(labels)):
-                for j in range(len(labels)):
-                    ax_cm.text(j, i, str(matrix[i, j]), ha="center", va="center", color="black" if matrix[i, j] < matrix.max()/2 else "white", fontsize=9)
-                    
-            ax_cm.set_xlabel("Predicted Specialisation", fontweight="bold", labelpad=10)
-            ax_cm.set_ylabel("True Specialisation", fontweight="bold")
-            plt.tight_layout()
-            st.pyplot(fig_cm)
-    
-    st.divider()
 # ============================================================
 # END OF DASHBOARD
 # ============================================================
